@@ -97,27 +97,63 @@ char* buscarPalabra (FILE *f) {//busca una palabra en la lista
     return NULL;
 }
 
-void PalabrasMasRelevantes(List* Libros){//busca las palabras y agrega la relevancia
+char* critrioPalabra(char* palabra){
+  int i,len=strlen(palabra);
+  for(i=0;i<len;i++){
+    if(isalpha(palabra[i])==0){
+      palabra[i]=' ';
+    }else{
+      palabra[i]=tolower(palabra[i]);
+    }
+  }
+  return palabra;
+}
+
+/*char * eliminarEspacios(char  *cadena){
+    char *aux = (char *) calloc(31,sizeof(char));
+    int k = 0;
+    int h = 0;
+    while (*(cadena + k) != '\0'){
+        if(*(cadena + k) != ' '){
+          *(aux + h) = *(cadena + k);
+          h++;
+        }
+        k++;
+    }
+    return aux;
+}*/
+
+void IngresarAlMapa(List* ListaLibros){//busca las palabras 
   printf("Ingrese la id del libro: ");
   char linea[1024] = {};
   getchar();
   scanf("%[0-9a-zA-Z ,-]",linea);
 
-  Libro* libro=buscarLibro(Libros,linea);
+  Libro* libro=buscarLibro(ListaLibros,linea);
 
   strcat(linea, ".txt");
 
   FILE* contenido = fopen(linea,"r");
   if(contenido == NULL){
       printf("No se ha podido leer el archivo\n");
-      return EXIT_FAILURE;
+      return exit(1);
   }
   
   char* plbr=buscarPalabra(contenido);
 
+  HashMap* MapaPalabras=createMap(1000);
+
+  int cont=1;
   while(plbr){
+    insertMap(MapaPalabras,plbr,plbr);
+    printf("cargando:%i%\n",cont);
+    system("cls");
+    //ingresar al hashmap
     plbr=buscarPalabra(contenido);
+    cont++;
   }
+
+  libro->Palabras=MapaPalabras;
 
   fclose(contenido);
   
