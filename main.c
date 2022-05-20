@@ -77,6 +77,51 @@ void cargarArchivos(int *contArchivos,List *Libros){
   }
 }
 
+Libro* buscarLibro(List* Libros,char* id){//busca el libro en la lista
+
+  Libro *aux = firstList(Libros);
+
+  while(aux != NULL){
+      if(strcmp(aux->id,id)==1)return aux;
+      aux = nextList(Libros);
+  }
+
+  return NULL;
+}
+
+char* buscarPalabra (FILE *f) {//busca una palabra en la lista
+  char x[1024];
+  if (fscanf(f, " %1023s", x) == 1)
+    return strdup(x);
+  else
+    return NULL;
+}
+
+void PalabrasMasRelevantes(List* Libros){//busca las palabras y agrega la relevancia
+  printf("Ingrese la id del libro: ");
+  char linea[1024] = {};
+  getchar();
+  scanf("%[0-9a-zA-Z ,-]",linea);
+
+  Libro* libro=buscarLibro(Libros,linea);
+
+  strcat(linea, ".txt");
+
+  FILE* contenido = fopen(linea,"r");
+  if(contenido == NULL){
+      printf("No se ha podido leer el archivo\n");
+      return EXIT_FAILURE;
+  }
+  
+  char* plbr=buscarPalabra(contenido);
+
+  while(plbr){
+    plbr=buscarPalabra(contenido);
+  }
+
+  fclose(contenido);
+  
+}//falta agregar cada palabra al mapa
 
 int main() {
   // Lista de Nombres de Libros.
