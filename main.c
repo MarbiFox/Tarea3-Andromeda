@@ -146,11 +146,18 @@ void procesarArchivos(List *Libros){
         //copio el la id y le agrego el .txt
         char aux[35] = {};
         strcpy(aux,libro->id);
+        char pre[8]="Libros\\";
+        strcat(pre,aux);
+        strcpy(aux,pre);
         strcat(aux,".txt");
+
+        printf("|%s|\n",aux);
         //abro archivo
         FILE *file = fopen(aux,"r");
         if (file == NULL) {
           printf("Error al abrir archivo.csv\n");
+          printf("%s\n",aux);
+          system("pause");
           exit(1);
         }
         libro->title = obtenerDatos(file,"Title:");  
@@ -319,12 +326,9 @@ int main() {
 Libro *crearLibro(){
   Libro *new  = (Libro*)malloc(sizeof(Libro));
   new->flag = false;
-  new->autor = (char*) calloc(61,sizeof(char));
-  if(new->autor == NULL) exit(1);
-  new->title = (char*) calloc(61,sizeof(char));
-  if(new->title == NULL) exit(1);
-  new->id = calloc(16,sizeof(char));
-  if(new->id == NULL) exit(1);
+  new->autor = (char*) malloc(61*sizeof(char));
+  new->title = (char*) malloc(61*sizeof(char));
+  new->id = malloc(16*sizeof(char));
   new->contCaracteres = 0;
   new->contPalabras = 0;
   new->Palabras = createMap(100);
