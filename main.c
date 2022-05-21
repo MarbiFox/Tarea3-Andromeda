@@ -5,8 +5,7 @@
 #include <ctype.h>
 #include "hashmap.h"
 #include "list.h"
-#include "list.c"
-//#include "treemap.h"
+
 
 typedef struct {
   char *palabra;
@@ -26,13 +25,13 @@ typedef struct {
   HashMap *Palabras;
 } Libro;
 
-//prototipos 
+//prototipos
 Libro *crearLibro();
 void mostrarDocumentosOrdenados(List *);
 //ඞඞඞඞඞඞඞඞඞඞඞ
 
 int search(char *token,List *Libros){
-    if(Libros->head == NULL) return 0;
+
     Libro *aux = firstList(Libros);
     while(aux != NULL){
         if(strcmp(token,aux->id) == 0) return -1;
@@ -48,11 +47,11 @@ void cargarArchivos(int *contArchivos,List *Libros){
   char linea[1024] = {};
   getchar();
   scanf("%[0-9a-zA-Z ,-]",linea);
-  
-  
+
+
   // Especificar Delimitador para StrTok.
   char delimitador[] = "' '";
-  
+
   // Obtener primera Palabra.
   char *token = strtok(linea, delimitador);
   if (token != NULL) {
@@ -66,7 +65,7 @@ void cargarArchivos(int *contArchivos,List *Libros){
           strcpy(lib->id,aux);
           pushBack(Libros, lib);
           (*contArchivos)++;
-          //Si esta recien insertado marcarlo como no procesado        
+          //Si esta recien insertado marcarlo como no procesado
       }
       // Recorrer el resto de la cadena.
       token = strtok(NULL, delimitador);
@@ -91,7 +90,7 @@ void eliminarEspaciosAdicionales(char *a){
   for(i = 0 ; i < z ; i++){
     if(a[i] != ' '){
       array[i] = 1;
-    } 
+    }
     else array[i] = 0;
   }
   for(i = 1; i < z ;i++){
@@ -160,14 +159,12 @@ void procesarArchivos(List *Libros){
           system("pause");
           exit(1);
         }
-        libro->title = obtenerDatos(file,"Title:");  
+        libro->title = obtenerDatos(file,"Title:");
         libro->autor = obtenerDatos(file,"Author:");
 
 
 
         //poner aqui lo de leer las palabras y guardarlo en el hashMap
-
-
 
 
 
@@ -228,7 +225,7 @@ char* critrioPalabra(char* palabra){
     return aux;
 }*/
 
-void IngresarAlMapa(List* ListaLibros){//busca las palabras 
+void IngresarAlMapa(List* ListaLibros){//busca las palabras
   printf("Ingrese la id del libro: ");
   char linea[1024] = {};
   getchar();
@@ -243,7 +240,7 @@ void IngresarAlMapa(List* ListaLibros){//busca las palabras
       printf("No se ha podido leer el archivo\n");
       return exit(1);
   }
-  
+
   char* plbr=buscarPalabra(contenido);
 
   HashMap* MapaPalabras=createMap(1000);
@@ -251,7 +248,7 @@ void IngresarAlMapa(List* ListaLibros){//busca las palabras
   int cont=1;
   while(plbr){
     insertMap(MapaPalabras,plbr,plbr);
-    printf("cargando:%i%\n",cont);
+    printf("cargando:%i\n",cont);
     system("cls");
     //ingresar al hashmap
     plbr=buscarPalabra(contenido);
@@ -261,7 +258,7 @@ void IngresarAlMapa(List* ListaLibros){//busca las palabras
   libro->Palabras=MapaPalabras;
 
   fclose(contenido);
-  
+
 }//falta agregar cada palabra al mapa
 
 int main() {
@@ -337,7 +334,7 @@ Libro *crearLibro(){
 
 void mostrarDocumentosOrdenados(List *Libros) {
   // ordenarLibros(Libros);
-  
+
   // Ver si se guardaron bien los archivos
   Libro *aux = firstList(Libros);
   while (aux != NULL) {
@@ -346,13 +343,13 @@ void mostrarDocumentosOrdenados(List *Libros) {
       printf("Titulo: Sin titulo\n");
     }
     else{
-      printf("Titulo: %s\n", aux->title);
+      printf("%s\n", aux->title);
     }
     if(aux->autor == NULL){
       printf("Titulo: Sin Autor\n");
     }
     else{
-      printf("Autor: %s\n",aux->autor);
+      printf("%s\n",aux->autor);
     }
     printf("id: %s\n", aux->id);
     printf("Cantidad de Palabras: %i\n", aux->contPalabras);
