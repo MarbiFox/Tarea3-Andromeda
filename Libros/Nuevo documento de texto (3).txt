@@ -1,0 +1,13 @@
+    plbr=critrioPalabra(plbr);
+    plbr=eliminarEspacios(plbr);
+
+    Palabra* aux=(Palabra*)malloc(sizeof(Palabra));
+    aux->apariciones=(List*)malloc(sizeof(List));
+    aux->cantidad=1;
+    aux->idx=posision;
+    strcpy(aux->palabra,plbr);
+    aux->relevancia;
+
+    insertMap(MapaPalabras,plbr,plbr);
+    //ingresar al hashmap
+    plbr=buscarPalabra(contenido);
