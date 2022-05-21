@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 #include "hashmap.h"
 #include "list.h"
 #include "list.c"
@@ -18,11 +19,14 @@ typedef struct {
   char *title;
   char *id;
   char *autor;
+  bool flag; //para comprobar si un libro ya a sido procesado
   int contPalabras;
   int contCaracteres;
   HashMap *Palabras;
 } Libro;
 
+//prototipos 
+Libro *crearLibro();
 //ඞඞඞඞඞඞඞඞඞඞඞ
 
 int search(char *token,List *Libros){
@@ -43,10 +47,6 @@ void cargarArchivos(int *contArchivos,List *Libros){
   getchar();
   scanf("%[0-9a-zA-Z ,-]",linea);
   
-  //voy a modificarlo para que guarde la id de inmediato en el libro
-  //Crear Lista de Id's
-  //List * idBooks = createList();
-  
   // Especificar Delimitador para StrTok.
   char delimitador[] = "' '";
   
@@ -57,12 +57,12 @@ void cargarArchivos(int *contArchivos,List *Libros){
         //comprobar si el token existe en nuestra lista
         if(search(token,Libros) == 0){
             printf("Entra a guardar libro...\n");
-            Libro *lib = (Libro*)malloc(sizeof(Libro));
-            char *aux= (char *) calloc(31,sizeof(char));
-            strcpy(aux,token);
-            lib->id = aux;
+            Libro *lib = crearLibro();
+            strcpy(lib->id,token);
             pushBack(Libros, lib);
             (*contArchivos)++;
+            //Si esta recien insertado marcarlo como no procesado
+            
         }
       // Recorrer el resto de la cadena.
       token = strtok(NULL, delimitador);
@@ -75,6 +75,59 @@ void cargarArchivos(int *contArchivos,List *Libros){
       printf("Primera ID:%s\n\n",aux->id);
       aux = nextList(Libros);
   }
+}
+
+//leer hasta que aparezca una linea entera con caracteres nulos
+//podria intentar copiar toda la linea donde encuentre el objeto buscado
+char *obtenerDatos(FILE *file,char *obj,char *title){
+  char *cadena;
+  char concat[176] = {};
+  int i = 0;
+  printf("antes del while()...\n");
+  while((cadena = fgets(cadena,1023,file)) != NULL){
+    char *aux = strtok(cadena,obj);
+    printf("antes de los condicionales\n");
+    if(aux != NULL){
+      if(i == 0){
+        printf("copio\n");
+        strcpy(concat,aux);
+        strcat(concat," ");
+        i++;
+      }else{
+        aux = strtok(cadena,"       ");
+        strcat(concat,aux);
+        break;
+      }
+    }
+  }
+  title = concat;
+  return title;
+}
+
+void procesarArchivos(List *Libros){
+    Libro *libro = firstList(Libros);
+    while(libro != NULL){
+        //comprobar si el libro fue procesado o no
+        if(libro->flag == false){
+            //copio el la id y le agrego el .txt
+            char aux[35] = {};
+            strcpy(aux,libro->id);
+            strcat(aux,".txt");
+
+            //abro archivo
+            FILE *file = fopen(aux,"r");
+            if (file == NULL) {
+              printf("Error al abrir archivo.csv\n");
+              exit(1);
+            }
+
+            obtenerDatos(file,"Title:",libro->title);
+            
+            libro->flag = true;
+
+        }
+        libro = nextList(Libros);
+    }
 }
 
 Libro* buscarLibro(List* Libros,char* id){//busca el libro en la lista
@@ -182,9 +235,10 @@ int main() {
     switch (menu) {
         case 1:
           cargarArchivos(&cantidadDeLibros,Libros);
+          printf("Entrando a procesar archivos...\n");
+          procesarArchivos(Libros);
           // Función que agrega los nombres necesarios a la lista.
           system("pause");
-          break;
         case 2:
           //mostrarDocumentosOrdenados(Libros);
           break;
@@ -215,4 +269,15 @@ int main() {
   }
 
   return 0;
+}
+
+Libro *crearLibro(){
+  Libro *new  = (Libro*)malloc(sizeof(Libro));
+  new->flag = false;
+  new->autor = (char*) calloc(61,sizeof(char));
+  new->title = (char*) calloc(61,sizeof(char));
+  new->contCaracteres = 0;
+  new->contPalabras = 0;
+  new->Palabras = createMap(1);
+  return new;
 }
