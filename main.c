@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <ctype.h>
 #include "hashmap.h"
 #include "list.h"
 #include "list.c"
@@ -27,6 +28,7 @@ typedef struct {
 
 //prototipos 
 Libro *crearLibro();
+void mostrarDocumentosOrdenados(List *);
 //ඞඞඞඞඞඞඞඞඞඞඞ
 
 int search(char *token,List *Libros){
@@ -47,6 +49,7 @@ void cargarArchivos(int *contArchivos,List *Libros){
   getchar();
   scanf("%[0-9a-zA-Z ,-]",linea);
   
+  
   // Especificar Delimitador para StrTok.
   char delimitador[] = "' '";
   
@@ -54,80 +57,122 @@ void cargarArchivos(int *contArchivos,List *Libros){
   char *token = strtok(linea, delimitador);
   if (token != NULL) {
     while (token != NULL) {
-        //comprobar si el token existe en nuestra lista
-        if(search(token,Libros) == 0){
-            printf("Entra a guardar libro...\n");
-            Libro *lib = crearLibro();
-            strcpy(lib->id,token);
-            pushBack(Libros, lib);
-            (*contArchivos)++;
-            //Si esta recien insertado marcarlo como no procesado
-            
-        }
+      //comprobar si el token existe en nuestra lista
+      char aux[11] = {};
+      if(search(token,Libros) == 0){
+          strcpy(aux,token);
+          printf("Entra a guardar libro...\n");
+          Libro *lib = crearLibro(aux);
+          strcpy(lib->id,aux);
+          pushBack(Libros, lib);
+          (*contArchivos)++;
+          //Si esta recien insertado marcarlo como no procesado        
+      }
       // Recorrer el resto de la cadena.
       token = strtok(NULL, delimitador);
     }
   }
-    printf("imprimiendo libros...\n");
-  //Imprimir las id de los libros para verificar que se guardan bien
-  Libro *aux = firstList(Libros);
-  while(aux != NULL){
-      printf("Primera ID:%s\n\n",aux->id);
-      aux = nextList(Libros);
+}
+
+void eliminarSaltosDeLinea(char *a){
+  int i = 0;
+  while(a[i] != '\0'){
+    if(a[i] == '\n') a[i] = '\0';
+    i++;
   }
+}
+
+void eliminarEspaciosAdicionales(char *a){
+  char aux[61] = {};
+  int i = 0;
+  int k = 0;
+  int z = strlen(a);
+  int *array = (int*)calloc(z,sizeof(int));
+  for(i = 0 ; i < z ; i++){
+    if(a[i] != ' '){
+      array[i] = 1;
+    } 
+    else array[i] = 0;
+  }
+  for(i = 1; i < z ;i++){
+    if(array[i] == 0 && array[i-1] == 1){
+      array[i] = -1;
+    }
+  }
+  for(i = 0 ; i < z - 1; i++){
+    if(array[i] == 1){
+      aux[k] = a[i];
+      k++;
+    }
+    if(array[i] == -1){
+      aux[k] = a[i];
+      k++;
+    }
+  }
+  strcpy(a,aux);
 }
 
 //leer hasta que aparezca una linea entera con caracteres nulos
 //podria intentar copiar toda la linea donde encuentre el objeto buscado
-char *obtenerDatos(FILE *file,char *obj,char *title){
-  char *cadena;
-  char concat[176] = {};
-  int i = 0;
-  printf("antes del while()...\n");
-  while((cadena = fgets(cadena,1023,file)) != NULL){
-    char *aux = strtok(cadena,obj);
-    printf("antes de los condicionales\n");
+char *obtenerDatos(FILE *file,char *obj){
+  char cadena[1024] = {};
+  char *modificable = (char*) calloc(61,sizeof(char));
+  //printf("antes del while()...\n");
+  while((fgets(cadena,1023,file)) != NULL){
+    char *aux = strstr(cadena,obj);
+    //printf("antes de los condicionales\n");
+    if(strstr(cadena,"*** START OF THE PROJECT GUTENBERG") != NULL) break;
     if(aux != NULL){
-      if(i == 0){
-        printf("copio\n");
-        strcpy(concat,aux);
-        strcat(concat," ");
-        i++;
-      }else{
-        aux = strtok(cadena,"       ");
-        strcat(concat,aux);
-        break;
+      strcpy(modificable,aux);
+      fgets(cadena,1023,file);
+      eliminarSaltosDeLinea(modificable);
+      aux = strstr(cadena,"       ");
+      if(aux != NULL){
+        eliminarEspaciosAdicionales(aux);
+        strcat(modificable," ");
+        strcat(modificable,aux);
       }
+      return modificable;
     }
   }
-  title = concat;
-  return title;
+  return NULL;
 }
 
 void procesarArchivos(List *Libros){
     Libro *libro = firstList(Libros);
     while(libro != NULL){
-        //comprobar si el libro fue procesado o no
-        if(libro->flag == false){
-            //copio el la id y le agrego el .txt
-            char aux[35] = {};
-            strcpy(aux,libro->id);
-            strcat(aux,".txt");
-
-            //abro archivo
-            FILE *file = fopen(aux,"r");
-            if (file == NULL) {
-              printf("Error al abrir archivo.csv\n");
-              exit(1);
-            }
-
-            obtenerDatos(file,"Title:",libro->title);
-            
-            libro->flag = true;
-
+      //comprobar si el libro fue procesado o no
+      if(libro->flag == false){
+        //copio el la id y le agrego el .txt
+        char aux[35] = {};
+        strcpy(aux,libro->id);
+        strcat(aux,".txt");
+        //abro archivo
+        FILE *file = fopen(aux,"r");
+        if (file == NULL) {
+          printf("Error al abrir archivo.csv\n");
+          exit(1);
         }
-        libro = nextList(Libros);
+        libro->title = obtenerDatos(file,"Title:");  
+        libro->autor = obtenerDatos(file,"Author:");
+
+
+
+        //poner aqui lo de leer las palabras y guardarlo en el hashMap
+
+
+
+
+
+
+
+
+
+        libro->flag = true;
+      }
+      libro = nextList(Libros);
     }
+    mostrarDocumentosOrdenados(Libros);
 }
 
 Libro* buscarLibro(List* Libros,char* id){//busca el libro en la lista
@@ -275,9 +320,40 @@ Libro *crearLibro(){
   Libro *new  = (Libro*)malloc(sizeof(Libro));
   new->flag = false;
   new->autor = (char*) calloc(61,sizeof(char));
+  if(new->autor == NULL) exit(1);
   new->title = (char*) calloc(61,sizeof(char));
+  if(new->title == NULL) exit(1);
+  new->id = calloc(16,sizeof(char));
+  if(new->id == NULL) exit(1);
   new->contCaracteres = 0;
   new->contPalabras = 0;
-  new->Palabras = createMap(1);
+  new->Palabras = createMap(100);
   return new;
+}
+
+void mostrarDocumentosOrdenados(List *Libros) {
+  // ordenarLibros(Libros);
+  
+  // Ver si se guardaron bien los archivos
+  Libro *aux = firstList(Libros);
+  while (aux != NULL) {
+    printf("\n*****************Libros*********************\n");
+    if(aux->title == NULL){
+      printf("Titulo: Sin titulo\n");
+    }
+    else{
+      printf("Titulo: %s\n", aux->title);
+    }
+    if(aux->autor == NULL){
+      printf("Titulo: Sin Autor\n");
+    }
+    else{
+      printf("Autor: %s\n",aux->autor);
+    }
+    printf("id: %s\n", aux->id);
+    printf("Cantidad de Palabras: %i\n", aux->contPalabras);
+    printf("Cantidad de Caracteres: %i\n", aux->contCaracteres);
+    printf("********************************************\n\n");
+    aux = nextList(Libros);
+  }
 }
