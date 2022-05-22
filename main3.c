@@ -3,8 +3,8 @@
 #include <string.h>
 #include <stdbool.h>
 #include <ctype.h>
-#include "hashmap.h"
-#include "list.h"
+#include "hashmap.c"
+#include "list.c"
 
 typedef struct {
   char *palabra;
@@ -124,6 +124,8 @@ void eliminarEspaciosAdicionales(char *a){
   strcpy(a,aux);
 }
 
+
+
 char * construirLinea (FILE *file) {
   //Buscar inicio
   char cadena[1024] = {};
@@ -155,14 +157,11 @@ char * construirLinea (FILE *file) {
 }
 
 char* buscarPalabra (FILE *f) {//busca una palabra en la lista
-  printf("[ENTRA EN FUNCION BUSCAR PALABRA]\n");
   char x[1024];
   if (fscanf(f, " %1023s", x) == 1){
-    printf("Entra en el if, x: %s\n",x);
     return strdup(x);
   }
   else{
-    printf("Entra en el else, x: %s\n",x);
     return NULL;
   }
 }
@@ -170,7 +169,9 @@ char* buscarPalabra (FILE *f) {//busca una palabra en la lista
 char* criterioPalabra(char* palabra){
   int i,len=strlen(palabra);
   for(i=0;i<len;i++){
-    if(isalpha(palabra[i])==0){
+    if(isalpha(palabra[i])==0 && i==len-1){
+      palabra[i]='\0';
+    }else if(isalpha(palabra[i])==0){
       palabra[i]=' ';
     }else{
       palabra[i]=tolower(palabra[i]);
@@ -179,47 +180,51 @@ char* criterioPalabra(char* palabra){
   return palabra;
 }
 
+char * quitarEspacios(char  *cadena){
+    char *aux = (char *) calloc(31,sizeof(char));
+    int k = 0;
+    int h = 0;
+    while (*(cadena + k) != '\0'){
+        if(*(cadena + k) != ' '){
+            *(aux + h) = *(cadena + k);
+            h++;
+        }
+        k++;
+    }
+    return aux;
+}
 
 void crearMapaPalabras(FILE * file, Libro * libro){//busca las palabras
 
   HashMap* MapaPalabras=createMap(1000);
   Palabra * word = (Palabra *) malloc (sizeof(Palabra));
   //Saltar hasta la línea que cuente.
-  char * cadena = (char *) malloc (sizeof(char));
-  while (fgets(cadena, 1023, file) != NULL) {
-    if (strstr (cadena, "*** START OF THE PROJECT GUTENBERG")) break;
+  char* palabra=buscarPalabra(file);
+
+  while (strcmp(palabra,"***")!=0)
+  {
+    palabra=buscarPalabra(file);
   }
-  char * plbr = NULL;
-  int idxPalabras = 0;
-  while (fgets(cadena, 1023, file) != NULL) {
-    if (strstr (cadena, "*** END OF THE PROJECT GUTENBERG")) break;
-    //Buscar una Palabra en el texto.
-    printf("-------------------\n");
+  palabra=buscarPalabra(file);
 
-    plbr = buscarPalabra(file);
-    printf("%s\n",plbr);
+  while (strcmp(palabra,"***")!=0)
+  {
+    palabra=buscarPalabra(file);
+  }
+  palabra=buscarPalabra(file);
 
-    while (plbr){
-        printf("Entra aqui\n");
-        plbr = criterioPalabra(plbr);
-        //Aumentar la cantidad de palabras.
-        idxPalabras++;
-        //Revisar si la palabra es nueva o se repite.
-        if (searchMap(MapaPalabras, plbr) == NULL) {
-          printf("LLEGA AL IF :)\n");
-          word = CrearPalabra(plbr);
-          insertMap(MapaPalabras, plbr, word);
-        }
-        word = searchMap(MapaPalabras, plbr)->value;
-        //Rellenar idx y cantidad.
-        word->idx[word->cantidad] = idxPalabras;
-        word->cantidad++;
-        plbr = buscarPalabra(file);
-    }
+
+  while (strcmp(palabra,"***")!=0)
+  {
+    palabra=criterioPalabra(palabra);
+    palabra=quitarEspacios(palabra);
+    printf("%s\n",palabra);
+    palabra=buscarPalabra(file);
   }
 
-  //Asignar el mapa al Libro.
-  libro->Palabras=MapaPalabras;
+
+
+  printf("%s\n",buscarPalabra(file));
 
 }
 
@@ -265,58 +270,6 @@ Libro* buscarLibro(List* Libros,char* id){//busca el libro en la lista
 }
 
 
-
-void IngresarAlMapa(List* ListaLibros){//busca las palabras
-   printf("Ingrese la id del libro: ");
-  char linea[1024] = {};
-  getchar();
-  scanf("%[0-9a-zA-Z ,-]",linea);
-
-  Libro* libro=buscarLibro(ListaLibros,linea);
-
-  strcat(linea, ".txt");
-
-  FILE* contenido = fopen(linea,"r");
-  if(contenido == NULL){
-      printf("No se ha podido leer el archivo\n");
-      return exit(1);
-  }
-
-  char* plbr=buscarPalabra(contenido);
-
-
-  HashMap* MapaPalabras=createMap(1000);
-
-  char *auxiliar_2 = plbr;
-  while(plbr){
-    plbr=criterioPalabra(plbr);
-
-    insertMap(MapaPalabras,auxiliar_2,plbr);
-
-    //ingresar al hashmap
-    plbr = buscarPalabra(contenido);
-    auxiliar_2 = plbr;
-  }
-
-
-  Pair *par = firstMap(MapaPalabras);
-
-  while (par)
-  {
-    printf("%s-%s\n",(char*)par->key,(char*)par->value);
-    par = nextMap(MapaPalabras);
-    system("pause");
-  }
-
-  libro->Palabras=MapaPalabras;
-
-  fclose(contenido);
-
-}//fata agregar cada palabra al mapa
-
-
-
-
 int main() {
   // Lista de Nombres de Libros.
   List *Libros = createList();
@@ -348,7 +301,7 @@ int main() {
           //mostrarDocumentosOrdenados(Libros);
           break;
         case 3:
-          IngresarAlMapa(Libros);
+          //IngresarAlMapa(Libros);
           break;
         case 4:
           // PalabraConMayorFrecuencia;
