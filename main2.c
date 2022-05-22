@@ -5,7 +5,6 @@
 #include <ctype.h>
 #include "hashmap.h"
 #include "list.h"
-//#include "treemap.h"
 
 typedef struct {
   char *palabra;
@@ -203,19 +202,6 @@ char* critrioPalabra(char* palabra){
   return palabra;
 }
 
-/*char * eliminarEspacios(char  *cadena){
-    char *aux = (char *) calloc(31,sizeof(char));
-    int k = 0;
-    int h = 0;
-    while (*(cadena + k) != '\0'){
-        if(*(cadena + k) != ' '){
-          *(aux + h) = *(cadena + k);
-          h++;
-        }
-        k++;
-    }
-    return aux;
-}*/
 
 void IngresarAlMapa(List* ListaLibros){//busca las palabras
    printf("Ingrese la id del libro: ");
@@ -234,36 +220,36 @@ void IngresarAlMapa(List* ListaLibros){//busca las palabras
   }
 
   char* plbr=buscarPalabra(contenido);
-  plbr=critrioPalabra(plbr);
-  plbr=eliminarEspacios(plbr);
+
 
   HashMap* MapaPalabras=createMap(1000);
 
-
+  char *auxiliar_2 = plbr;
   while(plbr){
-    insertMap(MapaPalabras,plbr,plbr);
+    plbr=critrioPalabra(plbr);
 
-    strcpy(plbr,critrioPalabra(plbr));
-    strcpy(plbr,eliminarEspacios(plbr));
+    insertMap(MapaPalabras,auxiliar_2,plbr);
 
     //ingresar al hashmap
-    plbr=buscarPalabra(contenido);
+    plbr = buscarPalabra(contenido);
+    auxiliar_2 = plbr;
   }
 
-  char* aux=firstMap(MapaPalabras)->key;
 
-  while (aux)
+  Pair *par = firstMap(MapaPalabras);
+
+  while (par)
   {
-    printf("%s\n",aux);
-    aux=nextMap(MapaPalabras)->key;
+    printf("%s-%s\n",(char*)par->key,(char*)par->value);
+    par = nextMap(MapaPalabras);
     system("pause");
   }
-  
+
   libro->Palabras=MapaPalabras;
 
   fclose(contenido);
 
-}//falta agregar cada palabra al mapa
+}//fata agregar cada palabra al mapa
 
 int main() {
   // Lista de Nombres de Libros.
@@ -296,7 +282,7 @@ int main() {
           //mostrarDocumentosOrdenados(Libros);
           break;
         case 3:
-          //BuscarLibroPorTitulo(Libros);
+          IngresarAlMapa(Libros);
           break;
         case 4:
           // PalabraConMayorFrecuencia;
