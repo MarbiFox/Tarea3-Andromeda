@@ -22,7 +22,7 @@ hers
 ours
 yours
 theirs
-myselft
+myself
 yourself
 himself
 herself
