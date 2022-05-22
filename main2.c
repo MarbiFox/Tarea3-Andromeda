@@ -218,7 +218,7 @@ char* critrioPalabra(char* palabra){
 }*/
 
 void IngresarAlMapa(List* ListaLibros){//busca las palabras
-  printf("Ingrese la id del libro: ");
+   printf("Ingrese la id del libro: ");
   char linea[1024] = {};
   getchar();
   scanf("%[0-9a-zA-Z ,-]",linea);
@@ -234,19 +234,31 @@ void IngresarAlMapa(List* ListaLibros){//busca las palabras
   }
 
   char* plbr=buscarPalabra(contenido);
+  plbr=critrioPalabra(plbr);
+  plbr=eliminarEspacios(plbr);
 
   HashMap* MapaPalabras=createMap(1000);
 
-  int cont=1;
+
   while(plbr){
     insertMap(MapaPalabras,plbr,plbr);
-    printf("cargando:%i\n",cont);
-    system("cls");
+
+    strcpy(plbr,critrioPalabra(plbr));
+    strcpy(plbr,eliminarEspacios(plbr));
+
     //ingresar al hashmap
     plbr=buscarPalabra(contenido);
-    cont++;
   }
 
+  char* aux=firstMap(MapaPalabras)->key;
+
+  while (aux)
+  {
+    printf("%s\n",aux);
+    aux=nextMap(MapaPalabras)->key;
+    system("pause");
+  }
+  
   libro->Palabras=MapaPalabras;
 
   fclose(contenido);
