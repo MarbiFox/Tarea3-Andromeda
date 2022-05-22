@@ -219,9 +219,6 @@ void crearMapaPalabras(FILE * file, Libro * libro){//busca las palabras
     palabra=buscarPalabra(file);
   }
 
-  printf("paso al otro while\n");
-  system("pause");
-
   palabra=buscarPalabra(file);
   while (strcmp(palabra,"***")!=0)
   {
@@ -232,11 +229,13 @@ void crearMapaPalabras(FILE * file, Libro * libro){//busca las palabras
 
   while (strcmp(palabra,"***")!=0)
   {
-    //palabra=criterioPalabra(palabra);
-    //palabra=quitarEspacios(palabra);
-    
+    palabra=criterioPalabra(palabra);
+    palabra=quitarEspacios(palabra);
+    if(strlen(palabra)>0){
+    cont++;
+    }
     palabra=buscarPalabra(file);
-    if(strlen(palabra)>0)cont++;
+    
   }
 
 
