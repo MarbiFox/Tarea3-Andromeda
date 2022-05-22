@@ -85,9 +85,6 @@ Palabra * CrearPalabra (char * plbr) {
   return new;
 }
 
-
-
-
 void eliminarSaltosDeLinea(char *a){
   int i = 0;
   while(a[i] != '\0'){
@@ -125,8 +122,6 @@ void eliminarEspaciosAdicionales(char *a){
   }
   strcpy(a,aux);
 }
-
-
 
 char * construirLinea (FILE *file) {
   //Buscar inicio
@@ -178,6 +173,7 @@ char* buscarPalabra (FILE *f) {//busca una palabra en la lista
   return strdup(x);
 }
 
+
 char* criterioPalabra(char* palabra){
   int i,len=strlen(palabra);
   for(i=0;i<len;i++){
@@ -206,10 +202,20 @@ char * quitarEspacios(char  *cadena){
     return aux;
 }
 
+void imprimirMapa (HashMap * MapaPalabras) {
+  char * p = firstMap(MapaPalabras)->key;
+  while (p != NULL) {
+    printf("%s\n", p);
+    p = nextMap(MapaPalabras)->key;
+  }
+}
+
 void crearMapaPalabras(FILE * file, Libro * libro){//busca las palabras
-    printf("[Entra en crearmapaPalabras]\n");
-  //HashMap* MapaPalabras=createMap(1000);
-  //Palabra * word = (Palabra *) malloc (sizeof(Palabra));
+  //INicio
+  printf("[Entra en crearmapaPalabras]\n");
+  HashMap* MapaPalabras=createMap(10000);
+  Palabra * word = (Palabra *) malloc (sizeof(Palabra));
+
   //Saltar hasta la línea que cuente.
   char* palabra=buscarPalabra(file);
   int cont = 0;
@@ -219,23 +225,43 @@ void crearMapaPalabras(FILE * file, Libro * libro){//busca las palabras
     palabra=buscarPalabra(file);
   }
 
+  printf("paso al otro while\n");
+  system("pause");
+
   palabra=buscarPalabra(file);
   while (strcmp(palabra,"***")!=0)
   {
     palabra=buscarPalabra(file);
   }
 
+  //Recorrido General del Texto.
   palabra=buscarPalabra(file);
+  int idxPalabras = 0;
 
   while (strcmp(palabra,"***")!=0)
   {
+    //Modificar Palabras.
     palabra=criterioPalabra(palabra);
     palabra=quitarEspacios(palabra);
-    if(strlen(palabra)>0){
-    cont++;
-    }
-    palabra=buscarPalabra(file);
     
+    //Aquí se tiene la palabra final.
+    //Ingresar al mapa.
+    if (searchMap(MapaPalabras, palabra) == NULL) {
+      // printf("LLEGA AL IF :)\n");
+      word = CrearPalabra(palabra);
+      insertMap(MapaPalabras, palabra, word);
+    }
+    // printf("Pasa por aquí\n");
+    word = searchMap(MapaPalabras, palabra)->value;
+    //Rellenar idx y cantidad.
+    word->idx[word->cantidad] = idxPalabras;
+    word->cantidad++;
+    printf("oa");
+    imprimirMapa(MapaPalabras);
+    //Reiniciar el ciclo
+    idxPalabras++;
+    palabra=buscarPalabra(file);
+    if(strlen(palabra)>0)cont++;
   }
 
 
