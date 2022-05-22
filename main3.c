@@ -12,7 +12,6 @@ typedef struct {
   char *palabra;
   size_t cantidad;
   size_t *idx;
-  List *apariciones;
   size_t relevancia;
 } Palabra;
 
@@ -202,14 +201,6 @@ char * quitarEspacios(char  *cadena){
     return aux;
 }
 
-void imprimirMapa (HashMap * MapaPalabras) {
-  char * p = firstMap(MapaPalabras)->key;
-  while (p != NULL) {
-    printf("%s\n", p);
-    p = nextMap(MapaPalabras)->key;
-  }
-}
-
 void crearMapaPalabras(FILE * file, Libro * libro){//busca las palabras
   //INicio
   printf("[Entra en crearmapaPalabras]\n");
@@ -218,7 +209,6 @@ void crearMapaPalabras(FILE * file, Libro * libro){//busca las palabras
 
   //Saltar hasta la línea que cuente.
   char* palabra=buscarPalabra(file);
-  int cont = 0;
   //AQUI SE CAEEEEEE
   while (strcmp(palabra,"***") != 0)
   {
@@ -226,7 +216,6 @@ void crearMapaPalabras(FILE * file, Libro * libro){//busca las palabras
   }
 
   printf("paso al otro while\n");
-  system("pause");
 
   palabra=buscarPalabra(file);
   while (strcmp(palabra,"***")!=0)
@@ -234,41 +223,44 @@ void crearMapaPalabras(FILE * file, Libro * libro){//busca las palabras
     palabra=buscarPalabra(file);
   }
 
+  printf("Comienza Recorrido General\n");
   //Recorrido General del Texto.
   palabra=buscarPalabra(file);
   int idxPalabras = 0;
+  int cantPalabras = 0;
+  int cantCaracteres = 0;
 
   while (strcmp(palabra,"***")!=0)
   {
-    //Modificar Palabras.
+    //Modificar Palabra.
     palabra=criterioPalabra(palabra);
     palabra=quitarEspacios(palabra);
     
-    //Aquí se tiene la palabra final.
     //Ingresar al mapa.
     if (searchMap(MapaPalabras, palabra) == NULL) {
-      // printf("LLEGA AL IF :)\n");
       word = CrearPalabra(palabra);
       insertMap(MapaPalabras, palabra, word);
+      cantPalabras++;
+      cantCaracteres += strlen(palabra);
     }
-    // printf("Pasa por aquí\n");
-    word = searchMap(MapaPalabras, palabra)->value;
     //Rellenar idx y cantidad.
-    word->idx[word->cantidad] = idxPalabras;
+    word = searchMap(MapaPalabras, palabra)->value;
+    // word->idx[word->cantidad] = idxPalabras;
     word->cantidad++;
-    printf("oa");
-    imprimirMapa(MapaPalabras);
+
     //Reiniciar el ciclo
     idxPalabras++;
     palabra=buscarPalabra(file);
-    if(strlen(palabra)>0)cont++;
   }
+  printf("Termina Recorrido General\n");
 
+  //Cantidad de Palabras y Caracteres por libro.
+  libro->contPalabras = cantPalabras;
+  libro->contCaracteres = cantCaracteres;
 
   printf("%s\n",buscarPalabra(file));
 
   printf("[PALABRAS PROCESADAS]\n");
-  libro->contPalabras = cont;
 }
 
 void procesarArchivos(List *Libros){
