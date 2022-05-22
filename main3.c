@@ -27,15 +27,16 @@ typedef struct {
 //prototipos
 Libro *crearLibro();
 void mostrarDocumentosOrdenados(List *);
+void *search(char *,List*);
 //ඞඞඞඞඞඞඞඞඞඞඞ
 
-int search(char *token,List *Libros){
+void *search(char *token,List *Libros){
     Libro *aux = firstList(Libros);
     while(aux != NULL){
-        if(strcmp(token,aux->id) == 0) return -1;
+        if(strcmp(token,aux->id) == 0) return aux;
         aux = nextList(Libros);
     }
-    return 0;
+    return NULL;
 }
 
 //Primero hay que cargar los archivos, so..
@@ -56,7 +57,7 @@ void cargarArchivos(int *contArchivos,List *Libros){
     while (token != NULL) {
       //comprobar si el token existe en nuestra lista
       char aux[11] = {};
-      if(search(token,Libros) == 0){
+      if(search(token,Libros) == NULL){
           strcpy(aux,token);
           printf("Entra a guardar libro...\n");
           Libro *lib = crearLibro(aux);
