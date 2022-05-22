@@ -5,6 +5,8 @@
 #include <ctype.h>
 #include "hashmap.h"
 #include "list.h"
+#include "hashmap.c"
+#include "list.c"
 
 typedef struct {
   char *palabra;
@@ -160,13 +162,20 @@ char * construirLinea (FILE *file) {
 }
 
 char* buscarPalabra (FILE *f) {//busca una palabra en la lista
-  char x[1024];
-  if (fscanf(f, " %1023s", x) == 1){
-    return strdup(x);
+  char x[1024]="";
+  int c,i=0;
+  while (x)
+  {
+    c=fgetc(f);
+    if(c==-1)return NULL;
+    if(c==' ')break;
+    if(c=='-')break;
+    if(c=='\n')return strdup(x);
+    x[i]=c;
+    x[i+1]='\0';
+    i++;
   }
-  else{
-    return NULL;
-  }
+  return strdup(x);
 }
 
 char* criterioPalabra(char* palabra){
@@ -204,33 +213,30 @@ void crearMapaPalabras(FILE * file, Libro * libro){//busca las palabras
   //Saltar hasta la línea que cuente.
   char* palabra=buscarPalabra(file);
   int cont = 0;
-
-  printf("palabra: %s\n",palabra);
-  system("pause");
   //AQUI SE CAEEEEEE
   while (strcmp(palabra,"***") != 0)
   {
     palabra=buscarPalabra(file);
   }
 
+  printf("paso al otro while\n");
+  system("pause");
+
   palabra=buscarPalabra(file);
   while (strcmp(palabra,"***")!=0)
   {
     palabra=buscarPalabra(file);
   }
 
-
   palabra=buscarPalabra(file);
-  printf("palabra: %s\n",palabra);
-  system("pause");
 
   while (strcmp(palabra,"***")!=0)
   {
-    palabra=criterioPalabra(palabra);
-    palabra=quitarEspacios(palabra);
-    printf("%s\n",palabra);
+    //palabra=criterioPalabra(palabra);
+    //palabra=quitarEspacios(palabra);
+    
     palabra=buscarPalabra(file);
-    cont++;
+    if(strlen(palabra)>0)cont++;
   }
 
 
