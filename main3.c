@@ -3,8 +3,8 @@
 #include <string.h>
 #include <stdbool.h>
 #include <ctype.h>
-#include "hashmap.c"
-#include "list.c"
+#include "hashmap.h"
+#include "list.h"
 
 typedef struct {
   char *palabra;
@@ -27,16 +27,15 @@ typedef struct {
 //prototipos
 Libro *crearLibro();
 void mostrarDocumentosOrdenados(List *);
-void *search(char *,List*);
 //ඞඞඞඞඞඞඞඞඞඞඞ
 
-void *search(char *token,List *Libros){
+int search(char *token,List *Libros){
     Libro *aux = firstList(Libros);
     while(aux != NULL){
-        if(strcmp(token,aux->id) == 0) return aux;
+        if(strcmp(token,aux->id) == 0) return -1;
         aux = nextList(Libros);
     }
-    return NULL;
+    return 0;
 }
 
 //Primero hay que cargar los archivos, so..
@@ -57,7 +56,7 @@ void cargarArchivos(int *contArchivos,List *Libros){
     while (token != NULL) {
       //comprobar si el token existe en nuestra lista
       char aux[11] = {};
-      if(search(token,Libros) == NULL){
+      if(search(token,Libros) == 0){
           strcpy(aux,token);
           printf("Entra a guardar libro...\n");
           Libro *lib = crearLibro(aux);
@@ -132,6 +131,7 @@ char * construirLinea (FILE *file) {
   char cadena[1024] = {};
   int size = 0;
   char * aux = (char *) malloc (1000 * sizeof(char));
+
   while ((fgets(cadena,1023,file)) != NULL) {
     //Ver primera línea
     if (strstr(cadena,"Title: ")) {
@@ -142,8 +142,9 @@ char * construirLinea (FILE *file) {
       break;
     }
   }
+
   while ((fgets(cadena,1023,file)) != NULL) {
-    if (strstr(cadena,"Author:") || strstr(cadena,"Authors:") ) break;
+    if (strstr(cadena,"Author:") || strstr(cadena,"Authors:") || strstr(cadena,"Release Date:")) break;
     //Ver segunda línea (si es que tiene)
     aux[size-1] = ' ';
     if (strstr(cadena,"       ")) {
@@ -153,6 +154,7 @@ char * construirLinea (FILE *file) {
       }
     }
   }
+
   aux[size] = '\0';
   return aux;
 }
@@ -196,24 +198,31 @@ char * quitarEspacios(char  *cadena){
 }
 
 void crearMapaPalabras(FILE * file, Libro * libro){//busca las palabras
-
-  HashMap* MapaPalabras=createMap(1000);
-  Palabra * word = (Palabra *) malloc (sizeof(Palabra));
+    printf("[Entra en crearmapaPalabras]\n");
+  //HashMap* MapaPalabras=createMap(1000);
+  //Palabra * word = (Palabra *) malloc (sizeof(Palabra));
   //Saltar hasta la línea que cuente.
   char* palabra=buscarPalabra(file);
+  int cont = 0;
 
+  printf("palabra: %s\n",palabra);
+  system("pause");
+  //AQUI SE CAEEEEEE
+  while (strcmp(palabra,"***") != 0)
+  {
+    palabra=buscarPalabra(file);
+  }
+
+  palabra=buscarPalabra(file);
   while (strcmp(palabra,"***")!=0)
   {
     palabra=buscarPalabra(file);
   }
-  palabra=buscarPalabra(file);
 
-  while (strcmp(palabra,"***")!=0)
-  {
-    palabra=buscarPalabra(file);
-  }
-  palabra=buscarPalabra(file);
 
+  palabra=buscarPalabra(file);
+  printf("palabra: %s\n",palabra);
+  system("pause");
 
   while (strcmp(palabra,"***")!=0)
   {
@@ -221,12 +230,14 @@ void crearMapaPalabras(FILE * file, Libro * libro){//busca las palabras
     palabra=quitarEspacios(palabra);
     printf("%s\n",palabra);
     palabra=buscarPalabra(file);
+    cont++;
   }
-
 
 
   printf("%s\n",buscarPalabra(file));
 
+  printf("[PALABRAS PROCESADAS]\n");
+  libro->contPalabras = cont;
 }
 
 void procesarArchivos(List *Libros){
