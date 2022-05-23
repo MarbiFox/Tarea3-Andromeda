@@ -17,3 +17,17 @@ BENJAMIN DIAZ
 BENJAMIN FERNANDEZ
 THOMAS MOLINA
 JORGE PALACIOS
+
+[COMPILAR]
+EN LA TERMINAL DEL VISUAL STUDIO CODE INGRESAR "gcc -g main.c list.c hashmap.c -o ejecutable.exe"
+En caso de no compilar por algun error del visual agregar esto en el inicio del main.c:
+#include "list.c"
+#include "hashmap.c"
+
+y compilamos como "gcc -g main.c -o ejecutable.exe"
+
+[PUNTOS-PREMIO-CASTIGO]
+BENJAMIN DIAZ 0
+BENJAMIN FERNANDEZ 0
+THOMAS MOLINA 0
+JORGE PALACIOS 0
