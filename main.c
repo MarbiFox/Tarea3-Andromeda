@@ -11,8 +11,8 @@ typedef struct {
   char *palabra;
   size_t cantidad;
   size_t *idx;
-  List *apariciones;
   size_t relevancia;
+  float frecuencia;
 } Palabra;
 
 typedef struct {
@@ -28,10 +28,9 @@ typedef struct {
 //prototipos
 Libro *crearLibro();
 void mostrarDocumentosOrdenados(List *);
-//ඞඞඞඞඞඞඞඞඞඞඞ
+void mostrarDocumentosOrdenados2(List *Libros, int cantidad);
 
 int search(char *token,List *Libros){
-
     Libro *aux = firstList(Libros);
     while(aux != NULL){
         if(strcmp(token,aux->id) == 0) return -1;
@@ -62,15 +61,28 @@ void cargarArchivos(int *contArchivos,List *Libros){
           strcpy(aux,token);
           printf("Entra a guardar libro...\n");
           Libro *lib = crearLibro(aux);
+          //printf("Crea el libro...\n");
           strcpy(lib->id,aux);
           pushBack(Libros, lib);
           (*contArchivos)++;
+          printf("[Guardando libro de id: %s]\n\n",lib->id);
           //Si esta recien insertado marcarlo como no procesado
       }
       // Recorrer el resto de la cadena.
       token = strtok(NULL, delimitador);
     }
   }
+}
+
+Palabra * CrearPalabra (char * plbr) {
+  //Crear Palabra
+  Palabra * new = (Palabra *) malloc (sizeof(Palabra));
+  new->palabra = plbr;
+  new->relevancia = 0;
+  new->idx = (size_t*) malloc (sizeof(size_t));
+  new->cantidad = 0;
+  new->frecuencia = 0;
+  return new;
 }
 
 void eliminarSaltosDeLinea(char *a){
@@ -111,30 +123,238 @@ void eliminarEspaciosAdicionales(char *a){
   strcpy(a,aux);
 }
 
-//leer hasta que aparezca una linea entera con caracteres nulos
-//podria intentar copiar toda la linea donde encuentre el objeto buscado
-char *obtenerDatos(FILE *file,char *obj){
+char * construirLinea (FILE *file) {
+  //Buscar inicio
   char cadena[1024] = {};
-  char *modificable = (char*) calloc(61,sizeof(char));
-  //printf("antes del while()...\n");
-  while((fgets(cadena,1023,file)) != NULL){
-    char *aux = strstr(cadena,obj);
-    //printf("antes de los condicionales\n");
-    if(strstr(cadena,"*** START OF THE PROJECT GUTENBERG") != NULL) break;
-    if(aux != NULL){
-      strcpy(modificable,aux);
-      fgets(cadena,1023,file);
-      eliminarSaltosDeLinea(modificable);
-      aux = strstr(cadena,"       ");
-      if(aux != NULL){
-        eliminarEspaciosAdicionales(aux);
-        strcat(modificable," ");
-        strcat(modificable,aux);
+  int size = 0;
+  char * aux = (char *) malloc (1000 * sizeof(char));
+
+  while ((fgets(cadena,1023,file)) != NULL) {
+    //Ver primera línea
+    if (strstr(cadena,"Title: ")) {
+      for (int i = 7; i < strlen(cadena); i++) {
+        aux[size] = cadena[i];
+        size++;
       }
-      return modificable;
+      break;
     }
   }
-  return NULL;
+
+  while ((fgets(cadena,1023,file)) != NULL) {
+    if (strstr(cadena,"Author:") || strstr(cadena,"Authors:") || strstr(cadena,"Release Date:")) break;
+    //Ver segunda línea (si es que tiene)
+    aux[size-1] = ' ';
+    if (strstr(cadena,"       ")) {
+      for (int i = 7; i < strlen(cadena); i++) {
+        aux[size] = cadena[i];
+        size++;
+      }
+    }
+  }
+
+  aux[size] = '\0';
+  return aux;
+}
+
+char* buscarPalabra (FILE *f) {//busca una palabra en la lista
+  char x[1024]="";
+  int c,i=0;
+  while (1)
+  {
+    c=fgetc(f);
+    if(c==-1)return NULL;
+    if(c==' ')break;
+    if(c=='-')break;
+    if(c=='\n')return strdup(x);
+    x[i]=c;
+    x[i+1]='\0';
+    i++;
+  }
+  return strdup(x);
+}
+
+
+char* criterioPalabra(char* palabra){
+  int i,len=strlen(palabra);
+  for(i=0;i<len;i++){
+    if(isalpha(palabra[i])==0 && i==len-1){
+      palabra[i]='\0';
+    }else if(isalpha(palabra[i])==0){
+      palabra[i]=' ';
+    }else{
+      palabra[i]=tolower(palabra[i]);
+    }
+  }
+  return palabra;
+}
+
+char * quitarEspacios(char  *cadena){
+    char *aux = (char *) calloc(31,sizeof(char));
+    int k = 0;
+    int h = 0;
+    while (*(cadena + k) != '\0'){
+        if(*(cadena + k) != ' '){
+            *(aux + h) = *(cadena + k);
+            h++;
+        }
+        k++;
+    }
+    return aux;
+}
+
+int compare_2(const void *a , const void *b){
+
+    const Palabra* orderA = (Palabra*)a;
+    const Palabra* orderB = (Palabra*)b;
+    return (orderB->frecuencia - orderA->frecuencia);
+}
+
+Palabra** shellSort(Palabra **vector, size_t talla) {
+  for (size_t intervalo = talla / 2; intervalo > 0; intervalo /= 2) {
+    for (long i = intervalo; i < talla; i += 1) {
+      float temp = vector[i]->frecuencia;
+      long k;
+      for (k = i; k >= intervalo && vector[k - intervalo]->frecuencia > temp; k -= intervalo) {
+        vector[k]->frecuencia = vector[k - intervalo]->frecuencia;
+      }
+      vector[k]->frecuencia = temp;
+    }
+  }
+  return vector;
+}
+
+void palabrasFrecuencia(List *Libros){
+
+    //TOP 10
+    //FRECUENCIA: CANTIDAD DE VECES QUE APARECE P / CANTIDAD TOTAL P
+
+    printf("Ingrese id del libro: ");
+    char id[1024] = {};
+    getchar();
+    scanf("%[0-9a-zA-Z ,-]",id);
+    printf("id: %s\n",id);
+    system("pause");
+    //ABRIR LIBRO
+    //verificamos si el libro existe
+    Libro *aux = firstList(Libros);
+    bool flag = true;
+    while (1){
+        if (strcmp(aux->id,id) == 0) break;
+        aux = nextList(Libros);
+        if (aux == NULL){
+            flag = false;
+            break;
+        }
+    }
+    if (flag){
+        printf("[ID encontrada]\n");
+        //analizar libro
+        int totalPalabras = (aux->contPalabras)-1;
+        Palabra* word;
+        word = firstMap(aux->Palabras)->value;
+        int cont = 0;
+        while (cont < totalPalabras - 1){
+            word->frecuencia = (float)(word->cantidad)/(totalPalabras);
+            word = nextMap(aux->Palabras)->value;
+
+            cont++;
+        }
+        printf("(se sale del while)\n");
+
+        //TOMAR LOS 10 CON MAYOR FRECUENCIA
+        //crear vector
+
+        Palabra **vector = (Palabra**)malloc(totalPalabras * sizeof(Palabra));
+
+        printf("llega aqui\n");
+        word = firstMap(aux->Palabras)->value;
+        for (int i = 0 ; i < totalPalabras; i++){
+            vector[i] = word;
+            word = nextMap(aux->Palabras)->value;
+        }
+
+        vector=shellSort(vector,totalPalabras);
+
+        printf("\n[TOP 10 PALABRAS]\n\n");
+        for (int i = totalPalabras-1; i > totalPalabras-10 ; i--){
+            printf("%d.-%s-Apariciones: %d-Frecuencia:%f\n",i,vector[i]->palabra,vector[i]->cantidad,vector[i]->frecuencia);
+            word = nextMap(aux->Palabras)->value;
+        }
+
+
+    }
+    else{
+        printf("[El libro ingresado no se encuentra procesado...]\n");
+    }
+    system("pause");
+
+}
+
+
+
+
+void crearMapaPalabras(FILE * file, Libro * libro){//busca las palabras
+  //INicio
+  printf("[Entra en crearmapaPalabras]\n");
+  HashMap* MapaPalabras=createMap(10000);
+  Palabra * word = (Palabra *) malloc (sizeof(Palabra));
+
+  //Saltar hasta la línea que cuente.
+  char* palabra=buscarPalabra(file);
+  //AQUI SE CAEEEEEE
+  while (strcmp(palabra,"***") != 0)
+  {
+    palabra=buscarPalabra(file);
+  }
+
+  printf("paso al otro while\n");
+
+  palabra=buscarPalabra(file);
+  while (strcmp(palabra,"***")!=0)
+  {
+    palabra=buscarPalabra(file);
+  }
+
+  printf("Comienza Recorrido General\n");
+  //Recorrido General del Texto.
+  palabra=buscarPalabra(file);
+  int idxPalabras = 0;
+  int cantPalabras = 0;
+  int cantCaracteres = 0;
+
+  while (strcmp(palabra,"***")!=0)
+  {
+    //Modificar Palabra.
+
+    palabra=criterioPalabra(palabra);
+    palabra=quitarEspacios(palabra);
+    //printf("%s\n",palabra);
+    //Ingresar al mapa.
+    if (searchMap(MapaPalabras, palabra) == NULL) {
+      word = CrearPalabra(palabra);
+      insertMap(MapaPalabras, palabra, word);
+      cantPalabras++;
+      cantCaracteres += strlen(palabra);
+    }
+    //Rellenar idx y cantidad.
+    word = searchMap(MapaPalabras, palabra)->value;
+    // word->idx[word->cantidad] = idxPalabras;
+    word->cantidad++;
+
+    //Reiniciar el ciclo
+    idxPalabras++;
+    palabra=buscarPalabra(file);
+  }
+  printf("Termina Recorrido General\n");
+
+  //Cantidad de Palabras y Caracteres por libro.
+  libro->contPalabras = cantPalabras;
+  libro->contCaracteres = cantCaracteres;
+
+  //printf("%s\n",buscarPalabra(file));
+  eraseMap(MapaPalabras,firstMap(MapaPalabras)->key);
+  libro->Palabras = MapaPalabras;
+  printf("[PALABRAS PROCESADAS]\n");
 }
 
 void procesarArchivos(List *Libros){
@@ -143,36 +363,23 @@ void procesarArchivos(List *Libros){
       //comprobar si el libro fue procesado o no
       if(libro->flag == false){
         //copio el la id y le agrego el .txt
-        char aux[35] = {};
-        strcpy(aux,libro->id);
-        char pre[8]="Libros\\";
-        strcat(pre,aux);
-        strcpy(aux,pre);
+        char aux[35] = {"Libros\\"};
+        strcat(aux,libro->id);
         strcat(aux,".txt");
 
-        printf("|%s|\n",aux);
         //abro archivo
         FILE *file = fopen(aux,"r");
         if (file == NULL) {
-          printf("Error al abrir archivo.csv\n");
-          printf("%s\n",aux);
+          printf("Error al abrir archivo.txt\n");
           system("pause");
           exit(1);
         }
-        libro->title = obtenerDatos(file,"Title:");
-        libro->autor = obtenerDatos(file,"Author:");
-
-
-
+        libro->title = construirLinea(file);
         //poner aqui lo de leer las palabras y guardarlo en el hashMap
-
-
-
-
-
-
-
         libro->flag = true;
+        crearMapaPalabras(file,libro);
+
+        fclose(file);
       }
       libro = nextList(Libros);
     }
@@ -191,75 +398,84 @@ Libro* buscarLibro(List* Libros,char* id){//busca el libro en la lista
   return NULL;
 }
 
-char* buscarPalabra (FILE *f) {//busca una palabra en la lista
-  char x[1024];
-  if (fscanf(f, " %1023s", x) == 1)
-    return strdup(x);
-  else
-    return NULL;
-}
-
-char* critrioPalabra(char* palabra){
-  int i,len=strlen(palabra);
-  for(i=0;i<len;i++){
-    if(isalpha(palabra[i])==0){
-      palabra[i]=' ';
-    }else{
-      palabra[i]=tolower(palabra[i]);
-    }
-  }
-  return palabra;
-}
-
-/*char * eliminarEspacios(char  *cadena){
-    char *aux = (char *) calloc(31,sizeof(char));
-    int k = 0;
-    int h = 0;
-    while (*(cadena + k) != '\0'){
-        if(*(cadena + k) != ' '){
-          *(aux + h) = *(cadena + k);
-          h++;
-        }
-        k++;
-    }
-    return aux;
-}*/
-
-void IngresarAlMapa(List* ListaLibros){//busca las palabras
-  printf("Ingrese la id del libro: ");
+void buscarPorTitulo(List* Libros){
+  printf("Ingrese linea con archivos (sin .txt)  y con espacios: ");
   char linea[1024] = {};
   getchar();
   scanf("%[0-9a-zA-Z ,-]",linea);
 
-  Libro* libro=buscarLibro(ListaLibros,linea);
+  char delimitador[] = "' '";
 
-  strcat(linea, ".txt");
-
-  FILE* contenido = fopen(linea,"r");
-  if(contenido == NULL){
-      printf("No se ha podido leer el archivo\n");
-      return exit(1);
+  char *token = strtok(linea, delimitador);
+  Libro* l=firstList(Libros);
+  HashMap* p=l->Palabras;
+  Pair* a=firstMap(p);
+  
+  while (token)
+  {
+    printf("libros que contienen la palabra [%s]:\n\n",token);
+    while (l)
+    {
+      token=criterioPalabra(token);
+      token=quitarEspacios(token);
+      p=l->Palabras;
+      if(searchMap(p,token)) printf(" -%s\n",l->title);
+      l=nextList(Libros);
+    }
+    printf("\n");
+    l=firstList(Libros);
+    token=strtok(NULL,delimitador);
   }
+  
+  
+}
 
-  char* plbr=buscarPalabra(contenido);
 
-  HashMap* MapaPalabras=createMap(1000);
+int comparar(const void *pivote, const void *elemento)
+{
+    Libro *ptrPiv = (Libro *)pivote;
+    Libro *ptrElm = (Libro *)elemento;
+    
+    return strcmp(ptrPiv->title,ptrElm->title);
+}
 
-  int cont=1;
-  while(plbr){
-    insertMap(MapaPalabras,plbr,plbr);
-    printf("cargando:%i\n",cont);
-    system("cls");
-    //ingresar al hashmap
-    plbr=buscarPalabra(contenido);
-    cont++;
+//Crea arreglo y los ordeno con un qsort
+Libro *ordenarLibros(List *Libros,size_t cantidad){
+  Libro *aux = firstList(Libros);
+  size_t i = 0;
+  Libro *array = NULL;
+  //Lo copio en un qsort
+  array = (Libro*)malloc(cantidad*sizeof(Libro));
+  while(aux!=NULL && i < cantidad){
+    *(array+(i)) = *aux;
+    aux = nextList(Libros);
+    i++;
   }
+  qsort(array,cantidad,sizeof(Libro),comparar);
+  
+  return array;
+}
 
-  libro->Palabras=MapaPalabras;
+void mostrarDocumentosOrdenados2(List *Libros, int cantidad) {
+  printf("[ENTRA A FUNCION MOSTRAR]\n");
+  Libro *aux = ordenarLibros(Libros,cantidad);
+  size_t i;
+  for(i = 0;i < cantidad;i++){
+    printf("\n*****************Libro*********************\n");
+    if(aux[i].title == NULL){
+      printf("Titulo: Sin titulo\n");
+    }
+    else{
+      printf("Titulo: %s\n", aux[i].title);
+    }
+    printf("id: %s\n", aux[i].id);
+    printf("Cantidad de Palabras: %i\n", aux[i].contPalabras);
+    printf("Cantidad de Caracteres: %i\n", aux[i].contCaracteres);
+    printf("********************************************\n\n");
+  }
+  free(aux);
+}
 
-  fclose(contenido);
-
-}//falta agregar cada palabra al mapa
 
 int main() {
   // Lista de Nombres de Libros.
@@ -288,14 +504,17 @@ int main() {
           procesarArchivos(Libros);
           // Función que agrega los nombres necesarios a la lista.
           system("pause");
+          break;
         case 2:
-          //mostrarDocumentosOrdenados(Libros);
+          mostrarDocumentosOrdenados2(Libros,cantidadDeLibros);
+          system("pause");
           break;
         case 3:
-          //BuscarLibroPorTitulo(Libros);
+          buscarPorTitulo(Libros);
+          system("pause");
           break;
         case 4:
-          // PalabraConMayorFrecuencia;
+          palabrasFrecuencia(Libros);
           break;
         case 5:
           // PalabrasMasRelevantes();
@@ -321,35 +540,31 @@ int main() {
 }
 
 Libro *crearLibro(){
+  printf("[FUNCION CREAR LIBRO]\n");
   Libro *new  = (Libro*)malloc(sizeof(Libro));
   new->flag = false;
-  new->autor = (char*) malloc(61*sizeof(char));
-  new->title = (char*) malloc(61*sizeof(char));
-  new->id = malloc(16*sizeof(char));
+  new->autor = (char*) malloc (1000 * sizeof(char));
+  new->title = (char*) malloc (1000 * sizeof(char));
+  new->id = (char*) malloc (1000 * sizeof(char));
   new->contCaracteres = 0;
   new->contPalabras = 0;
-  new->Palabras = createMap(100);
+  new->Palabras = createMap(1000);
   return new;
 }
 
 void mostrarDocumentosOrdenados(List *Libros) {
+    printf("[ENTRA A FUNCION MOSTRAR]\n");
   // ordenarLibros(Libros);
 
   // Ver si se guardaron bien los archivos
   Libro *aux = firstList(Libros);
   while (aux != NULL) {
-    printf("\n*****************Libros*********************\n");
+    printf("\n*****************Libro*********************\n");
     if(aux->title == NULL){
       printf("Titulo: Sin titulo\n");
     }
     else{
-      printf("%s\n", aux->title);
-    }
-    if(aux->autor == NULL){
-      printf("Titulo: Sin Autor\n");
-    }
-    else{
-      printf("%s\n",aux->autor);
+      printf("Titulo: %s\n", aux->title);
     }
     printf("id: %s\n", aux->id);
     printf("Cantidad de Palabras: %i\n", aux->contPalabras);
