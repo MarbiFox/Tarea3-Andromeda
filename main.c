@@ -23,6 +23,7 @@ typedef struct {
   int contPalabras;
   int contCaracteres;
   HashMap *Palabras;
+  int relevanciaActual;
 } Libro;
 
 //prototipos
@@ -476,6 +477,124 @@ void mostrarDocumentosOrdenados2(List *Libros, int cantidad) {
   free(aux);
 }
 
+double calcularRelevancia (List * Libros, int cantLibros, Palabra * p, Libro * mainBook){
+  //Calcular variables:
+  double a, b, c, d;
+  double res;
+
+  //Ocurrencias de p en MainBook
+  a = p->cantidad;
+
+  //Cantidad de Palabras en MainBook.
+  b = mainBook->contPalabras;
+
+  //Número de documentos.
+  c = cantLibros;
+
+  //Documentos que tienen la palabra p.
+  d = 0;
+  Libro * aux;
+  aux = firstList(Libros);
+  for (int i = 0; i < cantLibros; i++) {
+    //Recorrer Mapa de Palabras del libro.
+    if (searchMap(aux->Palabras, p->palabra) != NULL) {
+      d++;
+    }
+    aux = nextList(Libros);
+  }
+  if (d == 0) printf("Esto es mentira");
+  
+  //Realizar el Cálculo.
+  res = (double) (a/b) * log(c/d);
+
+  return res;
+}
+
+void ordenarVector (size_t * vector, int talla)
+{
+  size_t i, k;
+  size_t temp;
+  for (i = 1; i < talla; i++)
+  {
+      temp = vector[i];
+      k = i-1;
+      while ((k >= 0) && (vector[k] >= temp))
+      {
+          vector[k+1] = vector[k];
+          k--;
+      }
+      vector[k+1] = temp;
+  }
+}
+
+void PalabrasMasRelevantes (List * Libros, int cantLibros) {
+  //Ingresar por teclado el título de un Libro.
+  char * mainTitle = (char*) malloc (sizeof(char));
+  scanf("%1023s", mainTitle);
+
+  //Buscar el Mapa de Palabras de aquel título.
+  Libro * mainBook;
+  mainBook = firstList(Libros);
+  for (int i = 0; i < cantLibros; i++) {
+    if (strstr(mainBook->title, mainTitle)) break;
+    mainBook = nextList(Libros);
+  }
+  if (mainBook == NULL) printf("NO EXISTEN LIBROS CON ESE TiTULO");
+
+  //Calcular la Relevancia de todos las Palabras en el Texto.
+  Palabra * p;
+  size_t * vector = (size_t *) malloc (mainBook->contPalabras * sizeof(size_t));
+  p = firstMap(mainBook->Palabras)->value;
+  for (int i = 0; i < mainBook->contPalabras; i++) {
+    p->relevancia = (double) calcularRelevancia(Libros, cantLibros, p, mainBook);
+    printf("%lf\n", p->relevancia);
+    vector[i] = p->relevancia;
+    p = nextMap(mainBook->Palabras)->value;
+  }
+
+  //Ordenar por Relevancia
+  ordenarVector(vector, mainBook->contPalabras);
+
+  // //Imprimir los 10 mayores del Vector.
+  // for (int i = 0; i < 10; i++) {
+  //   printf("%s, %f", p->palabra, p->relevancia);
+  // }
+
+
+}
+
+int comparar1(const void *pivote, const void *elemento){
+
+  Libro *ptrPiv = (Libro *)pivote;
+  Libro *ptrElm = (Libro *)elemento;
+
+  return ptrPiv->relevanciaActual - ptrElm->relevanciaActual;
+}
+
+void BuscarPorPalabra(List *Libros){
+  char *variable = (char*) malloc(sizeof(char)*100);
+  printf("Ingrese la palabra a buscar en los textos: ");
+  getchar();
+  scanf("%[0-9a-zA-Z ,-]",variable);
+
+  variable = criterioPalabra(variable);
+  variable = quitarEspacios(variable);
+
+  size_t capacidad = 0;
+  Libro *array = NULL;
+  Libro *aux = firstList(Libros);
+  while(aux){
+    Palabra *p = searchMap(aux->Palabras,variable)->value;
+    if(p!=NULL){
+      capacidad++;
+      array = (Libro*) realloc(array,sizeof(Libro)*capacidad);
+      array[capacidad-1] = *aux;
+      array[capacidad-1].relevanciaActual = p->relevancia;
+    }
+    aux = nextList(Libros);
+  }
+  qsort(array,capacidad,sizeof(Libro),comparar1);
+}
 
 int main() {
   // Lista de Nombres de Libros.
@@ -517,10 +636,11 @@ int main() {
           palabrasFrecuencia(Libros);
           break;
         case 5:
-          // PalabrasMasRelevantes();
+          PalabrasMasRelevantes(Libros,cantidadDeLibros);
+          system("pause");
           break;
         case 6:
-          // BuscarPorPalabra();
+          BuscarPorPalabra(Libros);
           break;
         case 7:
           // MostrarPalabraEnSuContexto();
