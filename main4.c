@@ -66,3 +66,36 @@ void palabrasFrecuencia(List *Libros){
     system("pause");
 
 }
+
+void ordenarVector (Palabra ** vector, int talla)
+{
+  size_t i, k;
+  Palabra* temp = (Palabra*)malloc(sizeof(Palabra));
+
+  for (i = 1; i < talla; i++)
+  {
+      temp = vector[i];
+      k = i-1;
+      while ((k >= 0) && (vector[k] >= temp))
+      {
+          vector[k+1] = vector[k];
+          k--;
+      }
+      vector[k+1] = temp;
+  }
+}
+
+
+/*
+
+int compare_2(const void *pivote , const void *elemento){
+    Palabra *ptrPivote = (Libro*)pivote;
+    Palabra *ptrElemento = (Libro*)elemento;
+
+    if (ptrPivote->frecuencia < ptrElemento->frecuencia){
+        return 1;
+    }
+    return 0;
+}
+
+*/
